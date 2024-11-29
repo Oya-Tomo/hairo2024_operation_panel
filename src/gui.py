@@ -663,7 +663,7 @@ class OperationPanel:
             gripper_center,
             radius=20,
         )
-        text_col_angle = font.render(f"{self.col_state.angle}°", True, (0, 0, 0))
+        text_col_angle = font.render(f"{self.col_state.angle:.0f}°", True, (0, 0, 0))
         text_col_angle_rect = text_col_angle.get_rect()
         text_col_angle_rect.center = (
             gripper_center[0],
