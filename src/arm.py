@@ -41,7 +41,7 @@ class ArmIK:
         self.mid = mid
         self.base = base
 
-    def calculate(self, x, y, tip_angle) -> tuple[float, float, float] | None:
+    def calculate_ik(self, x, y, tip_angle) -> tuple[float, float, float] | None:
         if x < 0:
             return None
 
@@ -60,10 +60,15 @@ class ArmIK:
 
         dist_angle = math.atan2(y1, x1)
 
-        jb = math.pi / 2 + dist_angle + a
-        jm = c
-        jt = b + (math.pi / 2 - dist_angle) + math.pi / 2 + tip_angle
+        jb = dist_angle + a
+        jm = jb - math.pi + c
+        jt = tip_angle
         return jb, jm, jt
+
+    def calculate_fk(self, jb, jm, jt) -> tuple[float, float]:
+        x = math.cos(jb) * self.base + math.cos(jm) * self.mid + math.cos(jt) * self.tip
+        y = math.sin(jb) * self.base + math.sin(jm) * self.mid + math.sin(jt) * self.tip
+        return x, y
 
 
 if __name__ == "__main__":

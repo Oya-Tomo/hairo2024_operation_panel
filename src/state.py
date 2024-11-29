@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+# Shared with Master
+
 
 @dataclass
 class SystemState:
@@ -21,9 +23,11 @@ class FooterState:
 
 @dataclass
 class ArmState:
-    joint_base: float = 0.0
-    joint_mid: float = 0.0
-    joint_tip: float = 0.0
+    base_angle: float = 0.0
+    mid_angle: float = 0.0
+    tip_angle: float = 0.0
+    rotate: float = 0.0  # -180 ~ 180
+    hand_angle: float = 0.0  # 0 ~ 30
 
 
 @dataclass

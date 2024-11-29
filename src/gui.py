@@ -228,8 +228,26 @@ class OperationPanel:
 
     # Mode : Collect
     def collect_mode_update_state(self):
-        for event in self.events:
-            pass
+        # footer
+        self.footer_state.left_speed = -self.ctlr_get_axis(DS4Stick.LEFT_Y)
+        self.footer_state.right_speed = -self.ctlr_get_axis(DS4Stick.RIGHT_Y)
+
+        self.col_state.angle = guard(
+            self.col_state.angle
+            + (5 if self.ctlr_get_button(DS4Button.L2) else 0)
+            - (5 if self.ctlr_get_button(DS4Button.R2) else 0),
+            0,
+            45,
+        )
+
+        # arm rotate
+        self.arm_state.rotate = guard(
+            self.arm_state.rotate
+            + (5 if self.ctlr_get_button(DS4Button.L1) else 0)
+            - (5 if self.ctlr_get_button(DS4Button.R1) else 0),
+            -135,
+            135,
+        )
 
     def update_screen(self):
         self.screen.fill((255, 255, 255))
@@ -292,6 +310,14 @@ class OperationPanel:
         surface = pygame.Surface((width, height))
         surface.fill((255, 255, 255))
 
+        font = pygame.font.SysFont("notosanscjkjp", 36)
+
+        # render title
+        text_footer = font.render("footer", True, (0, 0, 0))
+        text_footer_rect = text_footer.get_rect()
+        text_footer_rect.topleft = (50, 50)
+        surface.blit(text_footer, text_footer_rect)
+
         # render body
 
         rect_body = pygame.Rect(0, 0, 150, 200)
@@ -327,8 +353,6 @@ class OperationPanel:
         pygame.draw.rect(surface, (50, 50, 50), rect_right_back, border_radius=5)
 
         # render flipper angles
-
-        font = pygame.font.SysFont("notosanscjkjp", 36)
 
         text_left_front = font.render(
             f"{self.footer_state.left_front_flipper:.0f}°", True, (0, 0, 0)
@@ -451,9 +475,17 @@ class OperationPanel:
         surface = pygame.Surface((width, height))
         surface.fill((255, 255, 255))
 
+        font = pygame.font.SysFont("notosanscjkjp", 36)
+
+        # render title
+        text_arm = font.render("footer", True, (0, 0, 0))
+        text_arm_rect = text_arm.get_rect()
+        text_arm_rect.topleft = (50, 50)
+        surface.blit(text_arm, text_arm_rect)
+
         # render arm
 
-        joint_point = [(0, -30), (0, 0)]
+        joint_point = [(0, -50), (0, -20)]
         joint_point.append(
             (
                 joint_point[-1][0]
@@ -560,4 +592,83 @@ class OperationPanel:
         self.screen.blit(surface, (self.screen.get_width() / 2, 100))
 
     def collect_render(self):
-        pass
+        width = self.screen.get_width() / 2
+        height = (self.screen.get_height() - 100) / 2
+
+        surface = pygame.Surface((width, height))
+        surface.fill((255, 255, 255))
+
+        font = pygame.font.SysFont("notosanscjkjp", 36)
+
+        # render title
+        text_col = font.render("collection", True, (0, 0, 0))
+        text_col_rect = text_col.get_rect()
+        text_col_rect.topleft = (50, 0)
+        surface.blit(text_col, text_col_rect)
+
+        # render gripper
+        gripper_center = (
+            width / 2,
+            height / 3,
+        )
+        gripper_center_left = (
+            width / 2 + 5,
+            height / 3,
+        )
+        gripper_center_right = (
+            width / 2 - 5,
+            height / 3,
+        )
+        pygame.draw.polygon(
+            surface,
+            (50, 50, 50),
+            [
+                gripper_center_right,
+                (
+                    gripper_center_right[0]
+                    + math.cos(deg_to_rad(self.col_state.angle + 90)) * 120,
+                    gripper_center_right[1]
+                    + math.sin(deg_to_rad(self.col_state.angle + 90)) * 120,
+                ),
+                (
+                    gripper_center_right[0]
+                    + math.cos(deg_to_rad(self.col_state.angle + 90 + 90)) * 50,
+                    gripper_center_right[1]
+                    + math.sin(deg_to_rad(self.col_state.angle + 90 + 90)) * 50,
+                ),
+            ],
+        )
+        pygame.draw.polygon(
+            surface,
+            (50, 50, 50),
+            [
+                gripper_center_left,
+                (
+                    gripper_center_left[0]
+                    - math.cos(deg_to_rad(self.col_state.angle + 90)) * 120,
+                    gripper_center_left[1]
+                    + math.sin(deg_to_rad(self.col_state.angle + 90)) * 120,
+                ),
+                (
+                    gripper_center_left[0]
+                    - math.cos(deg_to_rad(self.col_state.angle + 90 + 90)) * 50,
+                    gripper_center_left[1]
+                    + math.sin(deg_to_rad(self.col_state.angle + 90 + 90)) * 50,
+                ),
+            ],
+        )
+        pygame.draw.circle(
+            surface,
+            (150, 150, 150),
+            gripper_center,
+            radius=20,
+        )
+        text_col_angle = font.render(f"{self.col_state.angle}°", True, (0, 0, 0))
+        text_col_angle_rect = text_col_angle.get_rect()
+        text_col_angle_rect.center = (
+            gripper_center[0],
+            gripper_center[1] + 150,
+        )
+        surface.blit(text_col_angle, text_col_angle_rect)
+
+        self.screen.blit(surface, (self.screen.get_width() / 2, 100 + height))
