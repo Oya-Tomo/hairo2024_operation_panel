@@ -530,8 +530,16 @@ class OperationPanel:
                 ),
                 radius=10,
             )
-        upper_finger = self.arm_state.tip_angle + math.pi / 6
-        lower_finger = self.arm_state.tip_angle - math.pi / 6
+        upper_finger = (
+            self.arm_state.tip_angle
+            + math.pi / 8
+            + math.pi / 8 * self.arm_state.gripper_speed
+        )
+        lower_finger = (
+            self.arm_state.tip_angle
+            - math.pi / 8
+            - math.pi / 8 * self.arm_state.gripper_speed
+        )
         pygame.draw.polygon(
             surface,
             (50, 50, 50),
