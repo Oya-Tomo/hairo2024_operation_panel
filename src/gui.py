@@ -42,7 +42,7 @@ class OperationPanel:
         # shared state
 
         self.system_state = state.SystemState(
-            is_running=False,
+            is_running=True,
         )
 
         self.footer_state = state.FooterState(
