@@ -90,10 +90,15 @@ class OperationPanel:
         self.ctlr: pygame.joystick.JoystickType = None
         self.timer = pygame.time.Clock()
 
+        self.is_connected = False
+
     def update_event_buf(self):
         self.events = pygame.event.get()
 
     def update_state(self):
+        if not self.is_connected:
+            return
+
         for event in self.events:
             if event.type == pygame.JOYBUTTONDOWN:
                 if self.ctlr_get_button(DS4Button.PS):
@@ -115,6 +120,20 @@ class OperationPanel:
             self.collect_mode_update_state()
         else:
             pass
+
+    def send_state(self):
+        res = connection.tcp_send(
+            state.pack_state(
+                self.system_state,
+                self.footer_state,
+                self.arm_state,
+                self.col_state,
+            )
+        )
+        if res == "ok":
+            self.is_connected = True
+        else:
+            self.is_connected = False
 
     def ctlr_get_axis(self, axis: int) -> float:
         value = self.ctlr.get_axis(axis)
@@ -251,6 +270,11 @@ class OperationPanel:
         )
 
     def update_screen(self):
+        if self.is_connected:
+            pygame.display.set_caption("Operation Panel - Connected")
+        else:
+            pygame.display.set_caption("Operation Panel - Disconnected")
+
         self.screen.fill((255, 255, 255))
 
         self.system_render()
@@ -284,14 +308,7 @@ class OperationPanel:
                     pygame.quit()
                     sys.exit()
 
-            connection.tcp_send(
-                state.pack_state(
-                    self.system_state,
-                    self.footer_state,
-                    self.arm_state,
-                    self.col_state,
-                )
-            )
+            self.send_state()
 
             self.timer.tick(20)
 
