@@ -6,6 +6,7 @@ from enum import IntEnum
 from src.ds4 import DS4Button, DS4Stick
 from src import state
 from src import arm
+from src import connection
 from src.arm import deg_to_rad, rad_to_deg
 from src.utils import guard
 
@@ -282,6 +283,15 @@ class OperationPanel:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+
+            connection.tcp_send(
+                state.pack_state(
+                    self.system_state,
+                    self.footer_state,
+                    self.arm_state,
+                    self.col_state,
+                )
+            )
 
             self.timer.tick(20)
 
