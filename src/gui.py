@@ -219,7 +219,7 @@ class OperationPanel:
 
         # arm hand
         self.arm_state.gripper_speed = guard(
-            self.arm_state.gripper_speed
+            0.0
             + (1.0 if self.ctlr_get_button(DS4Button.L2) else 0)
             - (1.0 if self.ctlr_get_button(DS4Button.R2) else 0),
             -1.0,
