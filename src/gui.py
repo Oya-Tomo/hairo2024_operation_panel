@@ -42,8 +42,6 @@ class OperationPanel:
 
         self.system_state = state.SystemState(
             is_running=False,
-            arm_lock=True,
-            foot_lock=True,
         )
 
         self.footer_state = state.FooterState(
@@ -56,11 +54,11 @@ class OperationPanel:
         )
 
         self.arm_state = state.ArmState(
-            base_angle=135,
-            mid_angle=45,
-            tip_angle=-45,
+            base_angle=math.pi / 4 * 3,
+            mid_angle=math.pi / 4,
+            tip_angle=0.0,
             rotate=0.0,
-            hand_angle=0.0,
+            gripper_speed=0.0,
         )
 
         self.col_state = state.CollectionState(
@@ -77,9 +75,9 @@ class OperationPanel:
         # internal state
 
         self.arm_x, self.arm_y = self.arm_ik.calculate_fk(
-            deg_to_rad(self.arm_state.base_angle),
-            deg_to_rad(self.arm_state.mid_angle),
-            deg_to_rad(self.arm_state.tip_angle),
+            self.arm_state.base_angle,
+            self.arm_state.mid_angle,
+            self.arm_state.tip_angle,
         )
 
         # gui state
@@ -146,43 +144,43 @@ class OperationPanel:
         # flipper
         self.footer_state.left_front_flipper = guard(
             self.footer_state.left_front_flipper
-            + (5 if self.ctlr_get_button(DS4Button.HAT_UP) else 0)
-            - (5 if self.ctlr_get_button(DS4Button.HAT_LEFT) else 0),
-            0,
-            90,
+            + (0.05 if self.ctlr_get_button(DS4Button.HAT_UP) else 0)
+            - (0.05 if self.ctlr_get_button(DS4Button.HAT_LEFT) else 0),
+            0.0,
+            math.pi / 2,
         )
 
         self.footer_state.left_back_flipper = guard(
             self.footer_state.left_back_flipper
-            + (5 if self.ctlr_get_button(DS4Button.HAT_RIGHT) else 0)
-            - (5 if self.ctlr_get_button(DS4Button.HAT_DOWN) else 0),
-            0,
-            90,
+            + (0.05 if self.ctlr_get_button(DS4Button.HAT_RIGHT) else 0)
+            - (0.05 if self.ctlr_get_button(DS4Button.HAT_DOWN) else 0),
+            0.0,
+            math.pi / 2,
         )
 
         self.footer_state.right_front_flipper = guard(
             self.footer_state.right_front_flipper
-            + (5 if self.ctlr_get_button(DS4Button.TRIANGLE) else 0)
-            - (5 if self.ctlr_get_button(DS4Button.CIRCLE) else 0),
-            0,
-            90,
+            + (0.05 if self.ctlr_get_button(DS4Button.TRIANGLE) else 0)
+            - (0.05 if self.ctlr_get_button(DS4Button.CIRCLE) else 0),
+            0.0,
+            math.pi / 2,
         )
 
         self.footer_state.right_back_flipper = guard(
             self.footer_state.right_back_flipper
-            + (5 if self.ctlr_get_button(DS4Button.RECT) else 0)
-            - (5 if self.ctlr_get_button(DS4Button.CROSS) else 0),
-            0,
-            90,
+            + (0.05 if self.ctlr_get_button(DS4Button.RECT) else 0)
+            - (0.05 if self.ctlr_get_button(DS4Button.CROSS) else 0),
+            0.0,
+            math.pi / 2,
         )
 
         # arm rotate
         self.arm_state.rotate = guard(
             self.arm_state.rotate
-            + (5 if self.ctlr_get_button(DS4Button.L1) else 0)
-            - (5 if self.ctlr_get_button(DS4Button.R1) else 0),
-            -135,
-            135,
+            + (0.05 if self.ctlr_get_button(DS4Button.L1) else 0)
+            - (0.05 if self.ctlr_get_button(DS4Button.R1) else 0),
+            -math.pi * 3 / 4,
+            math.pi * 3 / 4,
         )
 
     def drive_mode_trans_prep(self):
@@ -194,36 +192,38 @@ class OperationPanel:
         # arm joints
         _arm_x = self.arm_x + self.ctlr_get_axis(DS4Stick.RIGHT_X) * 5
         _arm_y = self.arm_y - self.ctlr_get_axis(DS4Stick.RIGHT_Y) * 5
-        _tip_angle = self.arm_state.tip_angle + self.ctlr_get_axis(DS4Stick.LEFT_Y) * 5
+        _tip_angle = (
+            self.arm_state.tip_angle + self.ctlr_get_axis(DS4Stick.LEFT_Y) * 0.1
+        )
 
         angles = self.arm_ik.calculate_ik(
             _arm_x,
             _arm_y,
-            deg_to_rad(_tip_angle),
+            _tip_angle,
         )
         if angles is not None:
-            self.arm_state.base_angle = rad_to_deg(angles[0])
-            self.arm_state.mid_angle = rad_to_deg(angles[1])
-            self.arm_state.tip_angle = rad_to_deg(angles[2])
+            self.arm_state.base_angle = angles[0]
+            self.arm_state.mid_angle = angles[1]
+            self.arm_state.tip_angle = angles[2]
             self.arm_x = _arm_x
             self.arm_y = _arm_y
 
         # arm rotate
         self.arm_state.rotate = guard(
             self.arm_state.rotate
-            + (5 if self.ctlr_get_button(DS4Button.L1) else 0)
-            - (5 if self.ctlr_get_button(DS4Button.R1) else 0),
-            -135,
-            135,
+            + (0.05 if self.ctlr_get_button(DS4Button.L1) else 0)
+            - (0.05 if self.ctlr_get_button(DS4Button.R1) else 0),
+            -math.pi * 3 / 4,
+            math.pi * 3 / 4,
         )
 
         # arm hand
-        self.arm_state.hand_angle = guard(
-            self.arm_state.hand_angle
-            + (5 if self.ctlr_get_button(DS4Button.L2) else 0)
-            - (5 if self.ctlr_get_button(DS4Button.R2) else 0),
-            0,
-            30,
+        self.arm_state.gripper_speed = guard(
+            self.arm_state.gripper_speed
+            + (1.0 if self.ctlr_get_button(DS4Button.L2) else 0)
+            - (1.0 if self.ctlr_get_button(DS4Button.R2) else 0),
+            -1.0,
+            1.0,
         )
 
     # Mode : Collect
@@ -234,19 +234,19 @@ class OperationPanel:
 
         self.col_state.angle = guard(
             self.col_state.angle
-            + (5 if self.ctlr_get_button(DS4Button.L2) else 0)
-            - (5 if self.ctlr_get_button(DS4Button.R2) else 0),
-            0,
-            45,
+            + (0.05 if self.ctlr_get_button(DS4Button.L2) else 0)
+            - (0.05 if self.ctlr_get_button(DS4Button.R2) else 0),
+            0.0,
+            math.pi / 4,
         )
 
         # arm rotate
         self.arm_state.rotate = guard(
             self.arm_state.rotate
-            + (5 if self.ctlr_get_button(DS4Button.L1) else 0)
-            - (5 if self.ctlr_get_button(DS4Button.R1) else 0),
-            -135,
-            135,
+            + (0.05 if self.ctlr_get_button(DS4Button.L1) else 0)
+            - (0.05 if self.ctlr_get_button(DS4Button.R1) else 0),
+            -math.pi * 3 / 4,
+            math.pi * 3 / 4,
         )
 
     def update_screen(self):
@@ -261,8 +261,6 @@ class OperationPanel:
 
     def run(self):
         pygame.init()
-
-        print(pygame.font.get_fonts())
 
         self.screen = pygame.display.set_mode((1000, 800))
         pygame.display.set_caption("Operation Panel")
@@ -355,7 +353,7 @@ class OperationPanel:
         # render flipper angles
 
         text_left_front = font.render(
-            f"{self.footer_state.left_front_flipper:.0f}°", True, (0, 0, 0)
+            f"{rad_to_deg(self.footer_state.left_front_flipper):.0f}°", True, (0, 0, 0)
         )
         text_left_front_rect = text_left_front.get_rect()
         text_left_front_rect.center = (
@@ -365,7 +363,7 @@ class OperationPanel:
         surface.blit(text_left_front, text_left_front_rect)
 
         text_left_back = font.render(
-            f"{self.footer_state.left_back_flipper:.0f}°", True, (0, 0, 0)
+            f"{rad_to_deg(self.footer_state.left_back_flipper):.0f}°", True, (0, 0, 0)
         )
         text_left_back_rect = text_left_back.get_rect()
         text_left_back_rect.center = (
@@ -375,7 +373,7 @@ class OperationPanel:
         surface.blit(text_left_back, text_left_back_rect)
 
         text_right_front = font.render(
-            f"{self.footer_state.right_front_flipper:.0f}°", True, (0, 0, 0)
+            f"{rad_to_deg(self.footer_state.right_front_flipper):.0f}°", True, (0, 0, 0)
         )
         text_right_front_rect = text_right_front.get_rect()
         text_right_front_rect.center = (
@@ -385,7 +383,7 @@ class OperationPanel:
         surface.blit(text_right_front, text_right_front_rect)
 
         text_right_back = font.render(
-            f"{self.footer_state.right_back_flipper:.0f}°", True, (0, 0, 0)
+            f"{rad_to_deg(self.footer_state.right_back_flipper):.0f}°", True, (0, 0, 0)
         )
         text_right_back_rect = text_right_back.get_rect()
         text_right_back_rect.center = (
@@ -430,7 +428,9 @@ class OperationPanel:
 
         # render rotate
 
-        text_rotate = font.render(f"{self.arm_state.rotate:.0f}°", True, (0, 0, 0))
+        text_rotate = font.render(
+            f"{rad_to_deg(self.arm_state.rotate):.0f}°", True, (0, 0, 0)
+        )
         text_rotate_rect = text_rotate.get_rect()
         text_rotate_rect.center = (rect_body.centerx, rect_body.centery + 70)
         surface.blit(text_rotate, text_rotate_rect)
@@ -440,10 +440,8 @@ class OperationPanel:
             (50, 50, 50),
             (rect_body.centerx, rect_body.centery),
             (
-                rect_body.centerx
-                + 50 * math.cos(deg_to_rad(self.arm_state.rotate + 90)),
-                rect_body.centery
-                - 50 * math.sin(deg_to_rad(self.arm_state.rotate + 90)),
+                rect_body.centerx + 50 * math.cos(self.arm_state.rotate + math.pi / 2),
+                rect_body.centery - 50 * math.sin(self.arm_state.rotate + math.pi / 2),
             ),
             width=10,
         )
@@ -457,10 +455,8 @@ class OperationPanel:
             surface,
             (150, 150, 150),
             (
-                rect_body.centerx
-                + 50 * math.cos(deg_to_rad(self.arm_state.rotate + 90)),
-                rect_body.centery
-                - 50 * math.sin(deg_to_rad(self.arm_state.rotate + 90)),
+                rect_body.centerx + 50 * math.cos(self.arm_state.rotate + math.pi / 2),
+                rect_body.centery - 50 * math.sin(self.arm_state.rotate + math.pi / 2),
             ),
             radius=10,
         )
@@ -489,25 +485,25 @@ class OperationPanel:
         joint_point.append(
             (
                 joint_point[-1][0]
-                + self.arm_ik.base * math.cos(deg_to_rad(self.arm_state.base_angle)),
+                + self.arm_ik.base * math.cos(self.arm_state.base_angle),
                 joint_point[-1][1]
-                + self.arm_ik.base * math.sin(deg_to_rad(self.arm_state.base_angle)),
+                + self.arm_ik.base * math.sin(self.arm_state.base_angle),
             )
         )
         joint_point.append(
             (
                 joint_point[-1][0]
-                + self.arm_ik.mid * math.cos(deg_to_rad(self.arm_state.mid_angle)),
+                + self.arm_ik.mid * math.cos(self.arm_state.mid_angle),
                 joint_point[-1][1]
-                + self.arm_ik.mid * math.sin(deg_to_rad(self.arm_state.mid_angle)),
+                + self.arm_ik.mid * math.sin(self.arm_state.mid_angle),
             )
         )
         joint_point.append(
             (
                 joint_point[-1][0]
-                + self.arm_ik.tip * math.cos(deg_to_rad(self.arm_state.tip_angle)),
+                + self.arm_ik.tip * math.cos(self.arm_state.tip_angle),
                 joint_point[-1][1]
-                + self.arm_ik.tip * math.sin(deg_to_rad(self.arm_state.tip_angle)),
+                + self.arm_ik.tip * math.sin(self.arm_state.tip_angle),
             )
         )
 
@@ -534,8 +530,8 @@ class OperationPanel:
                 ),
                 radius=10,
             )
-        upper_finger = deg_to_rad(self.arm_state.tip_angle + self.arm_state.hand_angle)
-        lower_finger = deg_to_rad(self.arm_state.tip_angle - self.arm_state.hand_angle)
+        upper_finger = self.arm_state.tip_angle + math.pi / 6
+        lower_finger = self.arm_state.tip_angle - math.pi / 6
         pygame.draw.polygon(
             surface,
             (50, 50, 50),
@@ -626,15 +622,15 @@ class OperationPanel:
                 gripper_center_right,
                 (
                     gripper_center_right[0]
-                    + math.cos(deg_to_rad(self.col_state.angle + 90)) * 120,
+                    + math.cos(self.col_state.angle + math.pi / 2) * 120,
                     gripper_center_right[1]
-                    + math.sin(deg_to_rad(self.col_state.angle + 90)) * 120,
+                    + math.sin(self.col_state.angle + math.pi / 2) * 120,
                 ),
                 (
                     gripper_center_right[0]
-                    + math.cos(deg_to_rad(self.col_state.angle + 90 + 90)) * 50,
+                    + math.cos(self.col_state.angle + math.pi) * 50,
                     gripper_center_right[1]
-                    + math.sin(deg_to_rad(self.col_state.angle + 90 + 90)) * 50,
+                    + math.sin(self.col_state.angle + math.pi) * 50,
                 ),
             ],
         )
@@ -645,15 +641,15 @@ class OperationPanel:
                 gripper_center_left,
                 (
                     gripper_center_left[0]
-                    - math.cos(deg_to_rad(self.col_state.angle + 90)) * 120,
+                    - math.cos(self.col_state.angle + math.pi / 2) * 120,
                     gripper_center_left[1]
-                    + math.sin(deg_to_rad(self.col_state.angle + 90)) * 120,
+                    + math.sin(self.col_state.angle + math.pi / 2) * 120,
                 ),
                 (
                     gripper_center_left[0]
-                    - math.cos(deg_to_rad(self.col_state.angle + 90 + 90)) * 50,
+                    - math.cos(self.col_state.angle + math.pi) * 50,
                     gripper_center_left[1]
-                    + math.sin(deg_to_rad(self.col_state.angle + 90 + 90)) * 50,
+                    + math.sin(self.col_state.angle + math.pi) * 50,
                 ),
             ],
         )
@@ -663,7 +659,9 @@ class OperationPanel:
             gripper_center,
             radius=20,
         )
-        text_col_angle = font.render(f"{self.col_state.angle:.0f}°", True, (0, 0, 0))
+        text_col_angle = font.render(
+            f"{rad_to_deg(self.col_state.angle):.0f}°", True, (0, 0, 0)
+        )
         text_col_angle_rect = text_col_angle.get_rect()
         text_col_angle_rect.center = (
             gripper_center[0],
