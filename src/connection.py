@@ -3,7 +3,7 @@ from typing import Literal
 
 
 PORT = 5000
-SERVER = "localhost"
+SERVER = "hairo.local"
 ADDR = (SERVER, PORT)
 
 
