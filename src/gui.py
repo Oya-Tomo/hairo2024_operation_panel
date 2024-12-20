@@ -97,7 +97,8 @@ class OperationPanel:
 
     def update_state(self):
         if not self.is_connected:
-            return
+            # return
+            pass
 
         for event in self.events:
             if event.type == pygame.JOYBUTTONDOWN:
@@ -164,34 +165,34 @@ class OperationPanel:
         # flipper
         self.footer_state.left_front_flipper = guard(
             self.footer_state.left_front_flipper
-            + (0.05 if self.ctlr_get_button(DS4Button.HAT_UP) else 0)
-            - (0.05 if self.ctlr_get_button(DS4Button.HAT_LEFT) else 0),
-            0.0,
-            math.pi / 2,
+            + (0.08 if self.ctlr_get_button(DS4Button.HAT_UP) else 0)
+            - (0.08 if self.ctlr_get_button(DS4Button.HAT_LEFT) else 0),
+            -math.pi / 3,
+            math.pi / 3,
         )
 
         self.footer_state.left_back_flipper = guard(
             self.footer_state.left_back_flipper
-            + (0.05 if self.ctlr_get_button(DS4Button.HAT_RIGHT) else 0)
-            - (0.05 if self.ctlr_get_button(DS4Button.HAT_DOWN) else 0),
-            0.0,
-            math.pi / 2,
+            + (0.08 if self.ctlr_get_button(DS4Button.HAT_RIGHT) else 0)
+            - (0.08 if self.ctlr_get_button(DS4Button.HAT_DOWN) else 0),
+            -math.pi / 3,
+            math.pi / 3,
         )
 
         self.footer_state.right_front_flipper = guard(
             self.footer_state.right_front_flipper
-            + (0.05 if self.ctlr_get_button(DS4Button.TRIANGLE) else 0)
-            - (0.05 if self.ctlr_get_button(DS4Button.CIRCLE) else 0),
-            0.0,
-            math.pi / 2,
+            + (0.08 if self.ctlr_get_button(DS4Button.TRIANGLE) else 0)
+            - (0.08 if self.ctlr_get_button(DS4Button.CIRCLE) else 0),
+            -math.pi / 3,
+            math.pi / 3,
         )
 
         self.footer_state.right_back_flipper = guard(
             self.footer_state.right_back_flipper
-            + (0.05 if self.ctlr_get_button(DS4Button.RECT) else 0)
-            - (0.05 if self.ctlr_get_button(DS4Button.CROSS) else 0),
-            0.0,
-            math.pi / 2,
+            + (0.08 if self.ctlr_get_button(DS4Button.RECT) else 0)
+            - (0.08 if self.ctlr_get_button(DS4Button.CROSS) else 0),
+            -math.pi / 3,
+            math.pi / 3,
         )
 
         # arm rotate
@@ -199,8 +200,8 @@ class OperationPanel:
             self.arm_state.rotate
             + (0.05 if self.ctlr_get_button(DS4Button.L1) else 0)
             - (0.05 if self.ctlr_get_button(DS4Button.R1) else 0),
-            -math.pi * 3 / 4,
-            math.pi * 3 / 4,
+            -math.pi / 2,
+            math.pi / 2,
         )
 
     def drive_mode_trans_prep(self):
@@ -210,11 +211,18 @@ class OperationPanel:
     # Mode : Arm
     def arm_mode_update_state(self):
         # arm joints
-        _arm_x = self.arm_x + self.ctlr_get_axis(DS4Stick.RIGHT_X) * 5
-        _arm_y = self.arm_y - self.ctlr_get_axis(DS4Stick.RIGHT_Y) * 5
         _tip_angle = (
             self.arm_state.tip_angle + self.ctlr_get_axis(DS4Stick.LEFT_Y) * 0.1
         )
+        tip_size = 50
+        tip_x = self.arm_x + tip_size * math.cos(self.arm_state.tip_angle - math.pi / 2)
+        tip_y = self.arm_y + tip_size * math.sin(self.arm_state.tip_angle - math.pi / 2)
+
+        tip_x += self.ctlr_get_axis(DS4Stick.RIGHT_X) * 5
+        tip_y -= self.ctlr_get_axis(DS4Stick.RIGHT_Y) * 5
+
+        _arm_x = tip_x - tip_size * math.cos(_tip_angle - math.pi / 2)
+        _arm_y = tip_y - tip_size * math.sin(_tip_angle - math.pi / 2)
 
         angles = self.arm_ik.calculate_ik(
             _arm_x,
@@ -233,8 +241,8 @@ class OperationPanel:
             self.arm_state.rotate
             + (0.05 if self.ctlr_get_button(DS4Button.L1) else 0)
             - (0.05 if self.ctlr_get_button(DS4Button.R1) else 0),
-            -math.pi * 3 / 4,
-            math.pi * 3 / 4,
+            -math.pi / 2,
+            math.pi / 2,
         )
 
         # arm hand
@@ -265,8 +273,8 @@ class OperationPanel:
             self.arm_state.rotate
             + (0.05 if self.ctlr_get_button(DS4Button.L1) else 0)
             - (0.05 if self.ctlr_get_button(DS4Button.R1) else 0),
-            -math.pi * 3 / 4,
-            math.pi * 3 / 4,
+            -math.pi / 2,
+            math.pi / 2,
         )
 
     def update_screen(self):
@@ -561,11 +569,13 @@ class OperationPanel:
             self.arm_state.tip_angle
             + math.pi / 8
             + math.pi / 8 * self.arm_state.gripper_speed
+            - math.pi / 2
         )
         lower_finger = (
             self.arm_state.tip_angle
             - math.pi / 8
             - math.pi / 8 * self.arm_state.gripper_speed
+            - math.pi / 2
         )
         pygame.draw.polygon(
             surface,

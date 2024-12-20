@@ -11,7 +11,7 @@ def tcp_send(bin: bytes) -> Literal["ok", "disconnected", "timeout"]:
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
-        client.settimeout(0.2)
+        client.settimeout(0.1)
         client.connect(ADDR)
         client.settimeout(None)
     except Exception as e:
@@ -20,7 +20,7 @@ def tcp_send(bin: bytes) -> Literal["ok", "disconnected", "timeout"]:
         return "disconnected"
 
     try:
-        client.settimeout(0.2)
+        client.settimeout(0.1)
         client.send(bin)
         res = client.recv(1024).decode("utf-8")
         client.settimeout(None)
